@@ -1,2 +1,4 @@
 chatterbox-tts==0.1.4
 ml_dtypes==0.5.3
+streamlit==1.51.0
+audiorecorder==0.1

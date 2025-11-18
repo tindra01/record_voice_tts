@@ -95,3 +95,64 @@ with st.sidebar:
         st.button("Rewind", on_click=rewind, use_container_width=True, type='primary')
     with btn_col2:
         st.button("Clear", on_click=clear_history, use_container_width=True)
+
+st.subheader("마이크 녹음 테스트")
+
+audio = audiorecorder("녹음 시작", "녹음 정지")
+
+if len(audio) > 0:
+    st.success("녹음 완료")
+
+    with NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_file:
+        tmp_path = tmp_file.name
+        audio.export(tmp_path, format="mp3")
+        st.write(f"저장된 파일: {tmp_path}")
+
+# Display chat messages from history on app rerun
+for i, msg in enumerate(st.session_state.messages):
+    with st.chat_message(msg["role"]):
+        content = msg.get('content', '')
+        if voice_embed:
+            embed = msg.get('tts_embed', '')
+            if i == (len(st.session_state.messages) - 1):
+                embed = embed.replace('<audio controls>', '<audio controls autoplay>')
+            content = '\n\n'.join([content, embed])
+        st.markdown(content, unsafe_allow_html=True)
+
+if (prompt:= st.chat_input("Your message")):
+    content = prompt
+    with st.chat_message("user"):
+        st.markdown(content, unsafe_allow_html=True)
+
+    #Add user message to chat history
+    st.session_state.messages.append({
+        "role": "user",
+        "content": content
+    })
+
+    with st.chat_message("assistant"):
+        with st.spinner():
+            llm = ChatGoogleGenerativeAI(
+                model="gemini-2.5-flash",
+                temperature=0,
+                max_tokens=1024,
+                google_api_key = gemini_api_key
+            )
+            translate_dict = language_options()
+            translate_lang = translate_dict[lang]
+            llm_response = llm.invoke(
+                prompt + f"\nplease answer {translate_lang}, and answer Keep it short, under 300 characters"
+            ).content
+            st.markdown(llm_response)
+            tts_embed = tts_inference(
+                llm_response,
+                tmp_path,
+                TTS_MODEL,
+                translate_lang
+            )
+            st.markdown(
+                '\n\n'.join([tts_embed]),
+                unsafe_allow_html=True
+            )
+    st.session_state.message.append({"role": "assiatant", "content": llm_response, "tts_embed": tts_embed})
+    st.rerun()
