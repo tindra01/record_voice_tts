@@ -154,5 +154,5 @@ if (prompt:= st.chat_input("Your message")):
                 '\n\n'.join([tts_embed]),
                 unsafe_allow_html=True
             )
-    st.session_state.message.append({"role": "assiatant", "content": llm_response, "tts_embed": tts_embed})
+    st.session_state.messages.append({"role": "assiatant", "content": llm_response, "tts_embed": tts_embed})
     st.rerun()
